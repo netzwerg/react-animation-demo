@@ -1,10 +1,10 @@
 import * as React from 'react';
 import './App.css';
-import Timer = NodeJS.Timer;
 import Box from './Box';
 import { select } from 'd3-selection';
 import { easeBounceOut, easeCubicInOut } from 'd3-ease';
 import 'd3-transition';
+import Timer = NodeJS.Timer;
 
 type State = {
     readonly box: 'UPPER' | 'LOWER';
@@ -17,6 +17,7 @@ type Coordinate = {
 
 class App extends React.Component<object, State> {
 
+    private readonly circleId = 'circleId';
     private timer: Timer;
     private coordinateCache?: Coordinate;
     private svgRoot: SVGSVGElement;
@@ -43,13 +44,23 @@ class App extends React.Component<object, State> {
 
         return (
             <div className="App">
-                <svg viewBox={`0 0 ${viewBox.width} ${viewBox.height}`} ref={(svgRoot) => { this.svgRoot = svgRoot!; }}>
+                <svg viewBox={`0 0 ${viewBox.width} ${viewBox.height}`} ref={(svgRoot) => {this.svgRoot = svgRoot!; }}>
                     <g transform={`translate(${margin.left}, ${margin.top})`}>
                         <g>
-                            <Box showCircle={this.state.box === 'UPPER'} width={width} height={height / 2}/>
+                            <Box
+                                circleId={this.circleId}
+                                showCircle={this.state.box === 'UPPER'}
+                                width={width}
+                                height={height / 2}
+                            />
                         </g>
                         <g transform={`translate(0,${height / 2})`}>
-                            <Box showCircle={this.state.box === 'LOWER'} width={width} height={height / 2}/>
+                            <Box
+                                circleId={this.circleId}
+                                showCircle={this.state.box === 'LOWER'}
+                                width={width}
+                                height={height / 2}
+                            />
                         </g>
                     </g>
                 </svg>
@@ -76,48 +87,46 @@ class App extends React.Component<object, State> {
      */
     componentDidUpdate() {
 
-            const circle = this.svgRoot.getElementsByTagName('circle').item(0) as SVGCircleElement;
+        const circle = this.svgRoot.getElementById(this.circleId) as SVGCircleElement;
 
-            if (circle) {
+        if (circle) {
 
-                // (0) Calculate current coordinates relative to global view port
-                const currentCoordinates = this.getCoordinates(this.svgRoot, circle);
+            // (0) Calculate current coordinates relative to global view port
+            const currentCoordinates = this.getCoordinates(this.svgRoot, circle);
 
-                const previousCoordinates = this.coordinateCache || currentCoordinates;
+            const previousCoordinates = this.coordinateCache || currentCoordinates;
 
-                this.coordinateCache = currentCoordinates;
+            this.coordinateCache = currentCoordinates;
 
-                const easingFunction = currentCoordinates.cy > previousCoordinates.cy ? easeBounceOut : easeCubicInOut;
+            const easingFunction = currentCoordinates.cy > previousCoordinates.cy ? easeBounceOut : easeCubicInOut;
 
-                // (1) This clone will be used for the animation
-                const animatedCircle = circle.cloneNode(true) as SVGCircleElement;
+            // (1) This clone will be used for the animation
+            const animatedCircle = circle.cloneNode(true) as SVGCircleElement;
 
-                // (2) Attach to root element (animated x/y coordinates are in the system of the global view port)
-                this.svgRoot.appendChild(animatedCircle);
+            // (2) Attach to root element (animated x/y coordinates are in the system of the global view port)
+            this.svgRoot.appendChild(animatedCircle);
 
-                // (3) The DOM already contains the circle at the new position -> hide it until the animation is over
-                select(circle)
-                    .attr('visibility', 'hidden');
+            // (3) The DOM already contains the circle at the new position -> hide it until the animation is over
+            select(circle)
+                .attr('visibility', 'hidden');
 
-                // (4) The actual animation
-                select(animatedCircle)
-                    .attr('visibility', 'visible')
-                    .attr('cx', previousCoordinates.cx)
-                    .attr('cy', previousCoordinates.cy)
-                    .transition()
-                    .duration(1000)
-                    .ease(easingFunction)
-                    .attr('cx', currentCoordinates.cx)
-                    .attr('cy', currentCoordinates.cy)
-                    .remove(); // (5) Detach the animated circle once we're done
+            // (4) The actual animation
+            select(animatedCircle)
+                .attr('visibility', 'visible')
+                .attr('cx', previousCoordinates.cx)
+                .attr('cy', previousCoordinates.cy)
+                .transition()
+                .duration(1000)
+                .ease(easingFunction)
+                .attr('cx', currentCoordinates.cx)
+                .attr('cy', currentCoordinates.cy)
+                .remove() // (5) Detach the animated circle once we're done
+                .on('end', () => { // (6) Un-hide new state (already properly placed in the DOM)
+                    select(circle)
+                        .attr('visibility', 'visible');
+                });
 
-                // (6) Once the animation is over, we can again show the new state (already properly placed in the DOM)
-                select(circle)
-                    .transition()
-                    .delay(10000)
-                    .attr('visibility', 'visible');
-
-            }
+        }
 
     }
 
@@ -139,9 +148,9 @@ class App extends React.Component<object, State> {
 
         if (screenCTM) {
             const circleCoordinates = point.matrixTransform(screenCTM.inverse());
-            return { cx: circleCoordinates.x, cy: circleCoordinates.y};
+            return {cx: circleCoordinates.x, cy: circleCoordinates.y};
         } else {
-            return { cx: 0, cy: 0};
+            return {cx: 0, cy: 0};
         }
     }
 
