@@ -2,9 +2,9 @@ import * as React from 'react';
 import './Box.css';
 
 type BoxProps = {
-    width: number;
-    height: number;
-    showCircle: boolean;
+    readonly width: number;
+    readonly height: number;
+    readonly showCircle: boolean;
 };
 
 const Box = ({width, height, showCircle}: BoxProps) => {

@@ -7,12 +7,12 @@ import { easeBounceOut, easeCubicInOut } from 'd3-ease';
 import 'd3-transition';
 
 type State = {
-    box: 'UPPER' | 'LOWER';
+    readonly box: 'UPPER' | 'LOWER';
 };
 
 type Coordinate = {
-    cx: number
-    cy: number
+    readonly cx: number
+    readonly cy: number
 };
 
 class App extends React.Component<object, State> {
